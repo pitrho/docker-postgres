@@ -2,6 +2,7 @@
 
 echo ""
 echo "This script configures and starts Postgresql"
+echo "inside of a Docker container."
 echo "--------------------------------------------"
 
 
@@ -65,15 +66,13 @@ PGCMD="$BINDIR/postgres -c config_file=$CONFIG_FILE -c data_directory=$DATADIR -
 # Both $USER and $PASSWORD must be specified if
 # one of them is specified.
 #
-if [[ ! $SKIP_USER_CREATION ]]; then
-	if [[ -z $USER ]]; then
-		if [[ ! -z $PASSWORD ]]; then
-			die "If you give a PASSWORD, you must supply a USER!"
-		fi
-	else
-		if [[ -z $PASSWORD ]]; then
-			die "If you give a USER, you must supply a PASSWORD!"
-		fi
+if [[ -z $USER ]]; then
+	if [[ ! -z $PASSWORD ]]; then
+		die "If you give a PASSWORD, you must supply a USER!"
+	fi
+else
+	if [[ -z $PASSWORD ]]; then
+		die "If you give a USER, you must supply a PASSWORD!"
 	fi
 fi
 
