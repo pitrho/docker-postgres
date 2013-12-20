@@ -14,7 +14,7 @@ makes it easy to
 
 Clone the repository
 
-	export IMGTAG="pitrho/postgres"
+	export IMGTAG="pitrho/precise-postgres"
 	git clone https://github.com/pitrho/docker-precise-postgres.git
 	cd docker-precise-postgres
 	docker build -t $IMGTAG .
@@ -102,3 +102,20 @@ and we want to start PostgreSQL using this.  We'd start the container like
 
 	PGID=$(docker run -v /tmp/pgconfig/:/tmp/pgconfig/ -d $IMGTAG -u foo -p bar -c /tmp/pgconfig/postgresql.conf)
 	PGIP=$(docker inspect -format='{{.NetworkSettings.IPAddress}}' $PGID)
+
+
+## License
+
+MIT. See the LICENSE file.
+
+
+## Acknowledgements
+
+We started with the excellent
+[PostgreSQL Docker image from Discourse](https://github.com/srid/discourse-docker/tree/master/postgresql).
+
+
+## Contributors
+
+* [Kyle Jensen](https://github.com/kljensen)
+* [Gilman Callsen](https://github.com/callseng)
