@@ -2,9 +2,12 @@
 
 This repository contains a Dockerfile and associated
 scripts for building a [PostgreSQL](http://www.postgresql.org/)
-Docker image.  Unlike some other PostgreSQL Docker images,
-this image makes it easier to configure PostgreSQL without
-changing the image.
+Docker image from an [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/)
+base image.  This particular PostgreSQL Docker image
+makes it easy to
+
+* make your database persistent across container restarts; and,
+* configure PostgreSQL without changing the image, but instead by passing in arguments when the container is started.
 
 
 ## Building the image
