@@ -36,7 +36,8 @@ Now you should be able to connect with `psql` as such
 
 	psql -h $PGIP -U foo -d postgres
 
-You'll get prompted for a password, enter 'bar'.
+You'll get prompted for a password, enter 'bar'.  (Clearly, you will need
+to have a PostgreSQL client installed to have the `psql` command.)
 
 A few comments:
 
