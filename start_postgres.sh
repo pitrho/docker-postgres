@@ -8,14 +8,14 @@ echo "--------------------------------------------"
 
 # Default parameters
 #
-USER=""
-PASSWORD=""
-DATADIR=/var/lib/postgresql/9.1/main
-BINDIR=/usr/lib/postgresql/9.1/bin
-CONFIG_FILE=/etc/postgresql/9.1/main/postgresql.conf
-HBA_FILE=/etc/postgresql/9.1/main/pg_hba.conf
-IDENT_FILE=/etc/postgresql/9.1/main/pg_ident.conf
-
+USER=$POSTGRESQL_USER
+PASSWORD=$POSTGRESQL_PASSWORD
+DATADIR=${POSTGRESQL_DATADIR:=/var/lib/postgresql/9.1/main}
+BINDIR=${POSTGRESQL_BINDIR:=/usr/lib/postgresql/9.1/bin}
+CONFIG_FILE=${POSTGRESQL_CONFIG_FILE:=/etc/postgresql/9.1/main/postgresql.conf}
+HBA_FILE=${POSTGRESQL_HBA_FILE:=/etc/postgresql/9.1/main/pg_hba.conf}
+IDENT_FILE=${POSTGRESQL_IDENT_FILE:=/etc/postgresql/9.1/main/pg_ident.conf}
+MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:=60}
 
 # Custom die function.
 #
@@ -112,4 +112,4 @@ echo -e "\t config_file=$CONFIG_FILE"
 echo -e "\t hba_file=$HBA_FILE"
 echo -e "\t ident_file=$IDENT_FILE"
 echo -e "\t listen_addresses='*'"
-su postgres sh -c "$PGCMD $PGARGS -c listen_addresses='*'"
+su postgres sh -c "$PGCMD $PGARGS -c listen_addresses='*' -N $MAX_CONNECTIONS"
