@@ -1,115 +1,115 @@
 #!/usr/bin/env bash
 
-echo ""
-echo "This script configures and starts Postgresql"
-echo "inside of a Docker container."
-echo "--------------------------------------------"
-
+set -e
 
 # Default parameters
 #
-USER=$POSTGRESQL_USER
-PASSWORD=$POSTGRESQL_PASSWORD
-DATADIR=${POSTGRESQL_DATADIR:=/var/lib/postgresql/9.1/main}
-BINDIR=${POSTGRESQL_BINDIR:=/usr/lib/postgresql/9.1/bin}
-CONFIG_FILE=${POSTGRESQL_CONFIG_FILE:=/etc/postgresql/9.1/main/postgresql.conf}
-HBA_FILE=${POSTGRESQL_HBA_FILE:=/etc/postgresql/9.1/main/pg_hba.conf}
-IDENT_FILE=${POSTGRESQL_IDENT_FILE:=/etc/postgresql/9.1/main/pg_ident.conf}
-MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:=60}
+DATADIR=${PG_DATADIR:=/var/lib/postgresql/%%PG_VERSION%%/main}
+BINDIR=${PG_BINDIR:=/usr/lib/postgresql/%%PG_VERSION%%/bin}
+CONFIG_FILE=${PG_CONFIG_FILE:=/etc/postgresql/%%PG_VERSION%%/main/postgresql.conf}
+HBA_FILE=${PG_HBA_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_hba.conf}
+IDENT_FILE=${PG_IDENT_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_ident.conf}
+OUT_LOG=/var/log/postgresql/out.log
 
 # Custom die function.
 #
 die() { echo >&2 -e "\nRUN ERROR: $@\n"; exit 1; }
 
+StartPGServer()
+{
+  PGARGS="-c config_file=$CONFIG_FILE -c data_directory=$DATADIR -c hba_file=$HBA_FILE -c ident_file=$IDENT_FILE"
+  su postgres sh -c "$BINDIR/postgres ${PGARGS} ${EXTRA_OPTS} > $OUT_LOG 2>&1 &"
+}
 
-# Parse the command line flags.
-#
-while getopts ":u:p:d:c:h:s:" opt; do
-  case $opt in
-    u)
-      USER=${OPTARG}
-      ;;
+InitDB() {
 
-    p)
-      PASSWORD=${OPTARG}
-      ;;
+  # If DATADIR does not exist, create it
+  if [ ! -d $DATADIR ]; then
+    echo "Creating Postgres data at $DATADIR"
+    mkdir -p $DATADIR
+  fi
 
-    d)
-      DATADIR=${OPTARG}
-      ;;
+  # If DATADIR has no content, initialize it
+  if [ ! "$(ls -A $DATADIR)" ]; then
+    echo "Initializing Postgres Database at $DATADIR"
+    chown -R postgres $DATADIR
+    su postgres sh -c "$BINDIR/initdb $DATADIR"
+    touch $DATADIR/.EMPTY_DB
+  fi
+}
 
-    c)
-      CONFIG_FILE=${OPTARG}
-      ;;
-
-    h)
-      HBA_FILE=${OPTARG}
-      ;;
-
-    i)
-      IDENT_FILE=${OPTARG}
-      ;;
-
-    \?)
-      die "Invalid option: -$OPTARG"
-      ;;
-  esac
-done
-
-
-# Create a shortcut postgres command with all
-# the configuration options specified.
-#
-PGCMD=$BINDIR/postgres
-PGARGS="-c config_file=$CONFIG_FILE -c data_directory=$DATADIR -c hba_file=$HBA_FILE -c ident_file=$IDENT_FILE"
-
-
-# Both $USER and $PASSWORD must be specified if
-# one of them is specified.
-#
-if [[ -z $USER ]]; then
-	if [[ ! -z $PASSWORD ]]; then
-		die "If you give a PASSWORD, you must supply a USER!"
+CreatePGUser()
+{
+  SHOW_PWD=false
+  if [ "$PG_PASS" = "**Random**" ]; then
+	    unset PG_PASS
+      SHOW_PWD=true
 	fi
-else
-	if [[ -z $PASSWORD ]]; then
-		die "If you give a USER, you must supply a PASSWORD!"
-	fi
+
+  PASS=${PG_PASS:-$(pwgen -s 12 1)}
+  _word=$( [ ${PG_PASS} ] && echo "preset" || echo "random" )
+	echo "=> Creating PostgreSQL user ${PG_USER}"
+  psql -U postgres -c "CREATE USER ${PG_USER} WITH SUPERUSER ENCRYPTED PASSWORD '${PASS}';"
+  echo "=> Done!"
+  if [ "$SHOW_PWD" = true ]; then
+    	echo "========================================================================"
+    	echo "You can now connect to this PostgreSQL Server using:"
+    	echo ""
+    	echo "    psql -u $PG_USER -p $PASS -h <host> -p <port> -d <database>"
+    	echo ""
+    	echo "Please remember to change the above password as soon as possible!"
+    	echo "User 'postgres' has no password but only allows local connections"
+    	echo "========================================================================"
+  fi
+}
+
+OnCreateDB()
+{
+    if [ "${ON_CREATE_DB}" = "**False**" ]; then
+        unset ON_CREATE_DB
+    else
+        echo "Creating PostgreSQL database ${ON_CREATE_DB}"
+        psql -U postgres -c "CREATE DATABASE ${ON_CREATE_DB};"
+        echo "Database created!"
+    fi
+}
+
+ImportSql()
+{
+    if [ -z "${ON_CREATE_DB}" ]; then
+        echo "=> Cannot import SQL files. ON_CREATE_DB cannot be empty"
+    else
+
+      for FILE in ${STARTUP_SQL}; do
+  	    echo "=> Importing SQL file ${FILE}"
+        psql -U postgres $ON_CREATE_DB < ${FILE}
+      done
+    fi
+}
+
+echo "=> Starting PostgreSQL ..."
+InitDB
+StartPGServer
+
+# Create admin user and pre create database
+if [ -f $DATADIR/.EMPTY_DB ]; then
+    CreatePGUser
+    OnCreateDB
+    rm $DATADIR/.EMPTY_DB
 fi
 
-
-# If DATADIR does not exist, create it
-#
-if [ ! -d $DATADIR ]; then
-  echo "Creating Postgres data at $DATADIR"
-  mkdir -p $DATADIR
+# Import Startup SQL
+if [ -n "${STARTUP_SQL}" ]; then
+    if [ ! -f /sql_imported ]; then
+        echo "=> Initializing DB with ${STARTUP_SQL}"
+        ImportSql
+        touch /sql_imported
+    fi
 fi
 
-
-# If DATADIR has no content, initialize it
-#
-if [ ! "$(ls -A $DATADIR)" ]; then
-  echo "Initializing Postgres Database at $DATADIR"
-  chown -R postgres $DATADIR
-  su postgres sh -c "$BINDIR/initdb $DATADIR"
+# Set backup schedule
+if [ -n "${CRON_TIME}" ]; then
+    exec /enable_backups.sh
 fi
 
-
-# Create a user
-#
-if [[ ! -z $USER ]]; then
-	echo "Setting up Postgresql user '$USER' with password '$PASSWORD'"
-	echo "$PGCMD --single $PGARGS"
-	su postgres sh -c "$PGCMD --single $PGARGS" <<< "CREATE USER $USER WITH SUPERUSER PASSWORD '$PASSWORD';"
-fi
-
-
-# Start the Postgresql process
-#
-echo "Starting Postgresql with the following options:"
-echo -e "\t data_directory=$DATADIR"
-echo -e "\t config_file=$CONFIG_FILE"
-echo -e "\t hba_file=$HBA_FILE"
-echo -e "\t ident_file=$IDENT_FILE"
-echo -e "\t listen_addresses='*'"
-su postgres sh -c "$PGCMD $PGARGS -c listen_addresses='*' -N $MAX_CONNECTIONS"
+tail -f $OUT_LOG

@@ -2,9 +2,8 @@
 
 This repository contains a Dockerfile and associated
 scripts for building a [PostgreSQL](http://www.postgresql.org/)
-Docker image from an [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/)
-base image.  This particular PostgreSQL Docker image
-makes it easy to
+Docker image from an [Ubuntu 14.04 LTS](http://releases.ubuntu.com/trusty/)
+base image.  This particular PostgreSQL Docker image makes it easy to
 
 * make your database persistent across container restarts; and,
 * configure PostgreSQL without changing the image, but instead by passing in arguments when the container is started.
@@ -14,108 +13,110 @@ makes it easy to
 
 Clone the repository
 
-	export IMGTAG="pitrho/precise-postgres"
-	git clone https://github.com/pitrho/docker-precise-postgres.git
-	cd docker-precise-postgres
-	docker build -t $IMGTAG .
+		git clone https://github.com/pitrho/docker-postgres.git
+		cd docker-postgres
+		./build
 
-Verify you have the image locally
+To use a different tag, pass the -t flag with the tag name
 
-	docker images | grep "$IMGTAG"
+		./built -t new/tag
 
-## Example usage
+By default, this image will install PostgreSQL 9.4. If you want to install a
+previous version, then pass the -v flag along with the version.
 
-### Basic usage
+		./build -v 9.3
 
-Start the image, creating an admin user "foo" with password "bar".
+## Usage
 
-	PGID=$(docker run -d $IMGTAG -u foo -p bar)
-	PGIP=$(docker inspect -format='{{.NetworkSettings.IPAddress}}' $PGID)
+To run the image and bind to port 5432:
 
-Now you should be able to connect with `psql` as such
+  	docker run -d -p 5432:3306 pitrho/postgresql
 
-	psql -h $PGIP -U foo -d postgres
+The first time that you run your container, a new user `admin` with all
+privileges will be created in with a random password. To get the password,
+check the logs of the container by running:
 
-You'll get prompted for a password, enter 'bar'.  (Clearly, you will need
-to have a PostgreSQL client installed to have the `psql` command.)
+  	docker logs <CONTAINER_ID>
 
-A few comments:
+You will see an output like the following:
 
-* The `-u` and `-p` parameters are passed to the `start_postgres.sh` shell script, which is the `ENTRYPOINT` defined in the `Dockerfile`.
-* You can see the other configuration options in the `start_postgres.sh` script.
-* When run in this manner, the PostgreSQL data directory is on the container's [union file system](http://docs.docker.io/en/latest/terms/layer/). So, when the container is stopped or killed, your data will be deleted.
+	========================================================================
+	You can now connect to this PostgreSQL Server using:
 
+	    psql -u admin -p CwSlBmL6gE3P -h <host> -p <port> -d <database>
 
-### Persisting data across container restarts
+	Please remember to change the above password as soon as possible!
+	User 'postgres' has no password but only allows local connections
+	========================================================================
 
-To persist data, you'll need to use
-[Docker volumes](http://docs.docker.io/en/latest/use/working_with_volumes/).
+In this case, `CwSlBmL6gE3P` is the password allocated to the `admin` user.
 
-On the host system, create a directory that will house the persisted
-data.
+Remember that the `postgres` user has no password,but it's only accessible
+from within the container.
 
-	mkdir -p /tmp/pgdata
+You can now test your deployment:
 
-Now, mount that as a volume when you start up the container and
-tell PostgreSQL to store its data there
+  	psql -U admin
 
-	PGID=$(docker run -v /tmp/pgdata/:/tmp/pgdata/ -d $IMGTAG -u foo -p bar -d /tmp/pgdata/)
-	PGIP=$(docker inspect -format='{{.NetworkSettings.IPAddress}}' $PGID)
+## Changing the database user and password
 
-Again, you can connect from the host system like
+Instead of using the default admin user and the auto-generate password, you can
+use custom values. This can be done by passing environment variables PG_USER
+and PG_PASS.
 
-	psql -h $PGIP -U foo -d postgres
+  	docker run -d -p 3306:3306 -e PG_USER=user -e PG_PASS=pass pitrho/postgresql
 
-Go ahead and make some changes, e.g. creating a table, etc.  Then,
-stop the container
+## Passing extra configuration to start mysql server
 
-	docker stop $PGID
+To pass additional settings to `postgres`, you can use environment variable
+`EXTRA_OPTS`.
 
-Now, let's start it up again. Since we created the `foo` user previously, and
-our data were persisted in the volume, there's no need to pass the `-u` and 
-`-p` parameters this time
-
-	PGID=$(docker run -v /tmp/pgdata/:/tmp/pgdata/ -d $IMGTAG -d /tmp/pgdata/)
-	PGIP=$(docker inspect -format='{{.NetworkSettings.IPAddress}}' $PGID)
-
-Now, when you connect to the PostgreSQL instance, you'll notice the changes
-you made previously are still present.
+  	docker run -d -p 3306:3306 -e EXTRA_OPTS="-c some_option=value" pitrho/postgresql
 
 
-### Customizing the PostgreSQL configuration
+## Creating a database on container creation
 
-You can override each of the following
-[PostgreSQL configuration file locations](http://www.postgresql.org/docs/9.1/static/runtime-config-file-locations.html)
+If you want a database to be created inside the container when you start it up
+for the first time ,then you can set the environment variable `ON_CREATE_DB` to
+the name of the database.
 
-* `data_directory`, 
-* `config_file`, 
-* `hba_file`, and
-* `ident_file`.
+    docker run -d -p 3306:3306 -e ON_CREATE_DB="newdatabase" pitrho/postgresql
 
-To do so, you'll need to put them in a directory that is exposed to
-the running container as a volume.  (The
-[Docker cp](http://docs.docker.io/en/master/commandline/command/cp/)
-command can only copy files *from* a contain, alas.)
+If this is combined with importing SQL files, those files will be imported
+into the created database.
 
-For example, imagine we have a custom PostgreSQL config_file at `/tmp/pgconfig/postgresql.conf`
-and we want to start PostgreSQL using this.  We'd start the container like
 
-	PGID=$(docker run -v /tmp/pgconfig/:/tmp/pgconfig/ -d $IMGTAG -u foo -p bar -c /tmp/pgconfig/postgresql.conf)
-	PGIP=$(docker inspect -format='{{.NetworkSettings.IPAddress}}' $PGID)
+## Database data and volumes
 
+This image does not enforce any volumes on the user. Instead, it is up to the
+user to decide how to create any volumes to store the data. Docker has several
+ways to do this. More information can be found in the Docker
+[user guide](https://docs.docker.com/userguide/dockervolumes/).
+
+## Database backups
+
+This image introduces a mechanism for creating and storing backups on Amazon S3.
+The backups can be run manually or using an internal cron schedule.
+
+To run the backups manually, do:
+
+    docker run -e PG_USER=user PG_PASS=pass PG_DB=dname -e AWS_ACCESS_KEY_ID=keyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=region -e S3_BUCKET=path/to/bucket /backup.sh
+
+To run the backups on a cron schedule (e.g every day at 6 am), do:
+
+    docker run -d -p 3306:3306 -e PG_DB=dname -e AWS_ACCESS_KEY_ID=keyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=region -e S3_BUCKET=path/to/bucket -e CRON_TIME="0 6 * * * root"
 
 ## License
 
 MIT. See the LICENSE file.
-
 
 ## Acknowledgements
 
 We started with the excellent
 [PostgreSQL Docker image from Discourse](https://github.com/srid/discourse-docker/tree/master/postgresql).
 
-
 ## Contributors
 
 * [Kyle Jensen](https://github.com/kljensen)
 * [Gilman Callsen](https://github.com/callseng)
+* [Alejadnro Mesa](https://github.com/alejom99)

@@ -1,0 +1,66 @@
+# -*- sh -*-
+
+# Based on
+# https://github.com/srid/discourse-docker/blob/master/postgresql/Dockerfile
+FROM        phusion/baseimage:0.9.17
+MAINTAINER  pitrho
+
+# Set up the environment
+#
+ENV DEBIAN_FRONTEND noninteractive
+
+# make the "en_US.UTF-8" locale so postgres will be utf-8 enabled by default
+RUN apt-get update && apt-get install -y locales \
+  && rm -rf /var/lib/apt/lists/* \
+	&& localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+# Add apt repo for postgres
+RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
+# Install postgres and other packages
+RUN apt-get update && apt-get install -y -q \
+    postgresql-%%PG_VERSION%% \
+    postgresql-contrib-%%PG_VERSION%% \
+    pwgen \
+    awscli \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && touch /var/lib/postgresql/%%PG_VERSION%%/main/.EMPTY_DB
+
+# Correct the Error: could not open temporary statistics file "/var/run/postgresql/9.X-main.pg_stat_tmp/global.tmp": No such file or directory
+RUN mkdir -p /var/run/postgresql/%%PG_VERSION%%-main.pg_stat_tmp && \
+  chown postgres.postgres /var/run/postgresql/%%PG_VERSION%%-main.pg_stat_tmp -R
+
+# Adjust PostgreSQL configuration so that remote connections to the
+# database are possible.
+COPY pg_hba.conf /etc/postgresql/%%PG_VERSION%%/main/pg_hba.conf
+
+# And add listen_addresses to postgresql.conf
+RUN echo "listen_addresses='*'" >> /etc/postgresql/%%PG_VERSION%%/main/postgresql.conf
+#    echo "log_destination='stdout'" >> /etc/postgresql/%%PG_VERSION%%/main/postgresql.conf
+#    echo "logging_collector=on" >> /etc/postgresql/%%PG_VERSION%%/main/postgresql.conf && \
+#    echo "log_filename='postgresql.log'" >> /etc/postgresql/%%PG_VERSION%%/main/postgresql.conf
+
+# Add all service files to the image
+#
+RUN mkdir /etc/service/postgres
+COPY run /etc/service/postgres/run
+RUN chmod +x /etc/service/postgres/run
+
+# Add the backup-related scripts
+COPY enable_backups.sh /enable_backups.sh
+COPY backup.sh /backup.sh
+
+ENV PG_USER=admin \
+    PG_PASS=**Random** \
+    ON_CREATE_DB=**False**
+
+# Expose the PostgreSQL port
+EXPOSE 5432
+
+# Use baseimage-docker's init system.
+CMD ["/sbin/my_init"]
