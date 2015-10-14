@@ -66,7 +66,7 @@ and PG_PASS.
 
   	docker run -d -p 3306:3306 -e PG_USER=user -e PG_PASS=pass pitrho/postgresql
 
-## Passing extra configuration to start mysql server
+## Passing extra configuration to start postgresql server
 
 To pass additional settings to `postgres`, you can use environment variable
 `EXTRA_OPTS`.
