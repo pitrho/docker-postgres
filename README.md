@@ -1,9 +1,10 @@
-# Docker Precise Postgres
+# Docker Trusty/Precise Postgres
 
 This repository contains a Dockerfile and associated
 scripts for building a [PostgreSQL](http://www.postgresql.org/)
 Docker image from an [Ubuntu 14.04 LTS](http://releases.ubuntu.com/trusty/)
-base image.  This particular PostgreSQL Docker image makes it easy to
+base image (can change to Precise by modifying Dockerfile.tmpl).
+This particular PostgreSQL Docker image makes it easy to
 
 * make your database persistent across container restarts; and,
 * configure PostgreSQL without changing the image, but instead by passing in arguments when the container is started.
@@ -19,7 +20,7 @@ Clone the repository
 
 To use a different tag, pass the -t flag with the tag name
 
-		./built -t new/tag
+		./build -t new/tag
 
 By default, this image will install PostgreSQL 9.4. If you want to install a
 previous version, then pass the -v flag along with the version.
