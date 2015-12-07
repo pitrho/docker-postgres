@@ -17,11 +17,13 @@ die() { echo >&2 -e "\nRUN ERROR: $@\n"; exit 1; }
 
 StartPGServer()
 {
+  echo "=> Starting Postgres Server ..."
   PGARGS="-c config_file=$CONFIG_FILE -c data_directory=$DATADIR -c hba_file=$HBA_FILE -c ident_file=$IDENT_FILE"
   su postgres sh -c "$BINDIR/postgres ${PGARGS} ${EXTRA_OPTS} > $OUT_LOG 2>&1 &"
 }
 
 InitDB() {
+  echo "=> Initializing DB ..."
 
   # If DATADIR does not exist, create it
   if [ ! -d $DATADIR ]; then
