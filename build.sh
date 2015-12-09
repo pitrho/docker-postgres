@@ -31,6 +31,7 @@ mkdir build
 cp pg_hba.conf build/
 cp backup.sh build/
 cp enable_backups.sh build/
+cp restore_from_dump.sh build/
 sed 's/%%PG_VERSION%%/'"$PG_VERSION"'/g' start_postgres.sh > build/run
 
 # Copy docker file, and override the MYSQL_VERSION string

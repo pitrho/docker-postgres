@@ -57,7 +57,7 @@ CreatePGUser()
     	echo "========================================================================"
     	echo "You can now connect to this PostgreSQL Server using:"
     	echo ""
-    	echo "    psql -u $PG_USER -p $PASS -h <host> -p <port> -d <database>"
+    	echo "    psql -U $PG_USER -p $PASS -h <host> -p <port> -d <database>"
     	echo ""
     	echo "Please remember to change the above password as soon as possible!"
     	echo "User 'postgres' has no password but only allows local connections"

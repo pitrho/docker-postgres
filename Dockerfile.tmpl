@@ -66,6 +66,9 @@ RUN chmod +x /etc/service/postgres/run
 COPY enable_backups.sh /enable_backups.sh
 COPY backup.sh /backup.sh
 
+# Add restore from backups script
+COPY restore_from_dump.sh /restore_from_dump.sh
+
 ENV PG_USER=admin \
     PG_PASS=**Random** \
     ON_CREATE_DB=**False**
