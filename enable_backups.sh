@@ -5,8 +5,8 @@ BACKUP_LOG="/var/log/postgresql/backup.log"
 if [ -n "${CRON_TIME}" ]; then
     echo "=> Configuring cron schedule for database backups ..."
 
-    PG_HOST=${POSTGRES_PORT_3306_TCP_ADDR:-${PG_HOST}}
-    PG_PORT=${POSTGRES_PORT_3306_TCP_PORT:-${PG_PORT}}
+    PG_HOST=${POSTGRES_PORT_5432_TCP_ADDR:-${PG_HOST}}
+    PG_PORT=${POSTGRES_PORT_5432_TCP_PORT:-${PG_PORT}}
     PG_USER=${PG_USER:-${PG_ENV_PG_USER}}
     PG_PASS=${PG_PASS:-${PG_ENV_PG_PASS}}
 

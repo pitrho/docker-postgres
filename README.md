@@ -31,7 +31,7 @@ previous version, then pass the -v flag along with the version.
 
 To run the image and bind to port 5432:
 
-  	docker run -d -p 5432:3306 pitrho/postgresql
+  	docker run -d -p 5432:5432 pitrho/postgresql
 
 The first time that you run your container, a new user `admin` with all
 privileges will be created in with a random password. To get the password,
@@ -65,14 +65,14 @@ Instead of using the default admin user and the auto-generate password, you can
 use custom values. This can be done by passing environment variables PG_USER
 and PG_PASS.
 
-  	docker run -d -p 3306:3306 -e PG_USER=user -e PG_PASS=pass pitrho/postgresql
+  	docker run -d -p 5432:5432 -e PG_USER=user -e PG_PASS=pass pitrho/postgresql
 
 ## Passing extra configuration to start postgresql server
 
 To pass additional settings to `postgres`, you can use environment variable
 `EXTRA_OPTS`.
 
-  	docker run -d -p 3306:3306 -e EXTRA_OPTS="-c some_option=value" pitrho/postgresql
+  	docker run -d -p 5432:5432 -e EXTRA_OPTS="-c some_option=value" pitrho/postgresql
 
 
 ## Creating a database on container creation
@@ -81,7 +81,7 @@ If you want a database to be created inside the container when you start it up
 for the first time ,then you can set the environment variable `ON_CREATE_DB` to
 the name of the database.
 
-    docker run -d -p 3306:3306 -e ON_CREATE_DB="newdatabase" pitrho/postgresql
+    docker run -d -p 5432:5432 -e ON_CREATE_DB="newdatabase" pitrho/postgresql
 
 If this is combined with importing SQL files, those files will be imported
 into the created database.
@@ -105,7 +105,7 @@ To run the backups manually, do:
 
 To run the backups on a cron schedule (e.g every day at 6 am), do:
 
-    docker run -d -p 3306:3306 -e PG_DB=dname -e AWS_ACCESS_KEY_ID=keyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=region -e S3_BUCKET=path/to/bucket -e CRON_TIME="0 6 * * * root"
+    docker run -d -p 5432:5432 -e PG_DB=dname -e AWS_ACCESS_KEY_ID=keyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=region -e S3_BUCKET=path/to/bucket -e CRON_TIME="0 6 * * * root"
 
 ## License
 
