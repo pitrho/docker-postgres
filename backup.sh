@@ -36,7 +36,7 @@ if [[ $count -eq 0 ]]; then
 fi
 
 # Create the database backup locally
-su postgres sh -c "/usr/bin/pg_dump -Fc --no-acl --no-owner ${PG_DB} | gzip -9 > ${BACKUP_PATH}"
+su postgres sh -c "PGPASSWORD=${PG_PASS} /usr/bin/pg_dump -h ${PG_HOST} -p ${PG_PORT} -U ${PG_USER} -Fc --no-acl --no-owner ${PG_DB} | gzip -9 > ${BACKUP_PATH}"
 if [ "$?" -ne 0 ]; then
     echo "   Backup failed"
     rm -rf $BACKUP_PATH
