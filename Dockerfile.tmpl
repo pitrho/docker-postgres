@@ -31,7 +31,8 @@ RUN apt-get update && apt-get install -y -q \
   && rm -rf /var/lib/apt/lists/* \
   && touch /var/lib/postgresql/%%PG_VERSION%%/main/.EMPTY_DB
 
-# Correct the Error: could not open temporary statistics file "/var/run/postgresql/9.X-main.pg_stat_tmp/global.tmp": No such file or directory
+# Correct the Error: could not open temporary statistics file
+# "/var/run/postgresql/9.X-main.pg_stat_tmp/global.tmp": No such file or directory
 RUN mkdir -p /var/run/postgresql/%%PG_VERSION%%-main.pg_stat_tmp && \
   chown postgres.postgres /var/run/postgresql/%%PG_VERSION%%-main.pg_stat_tmp -R
 
@@ -45,6 +46,8 @@ RUN mkdir /etc/ssl/private-copy; \
   mv /etc/ssl/private-copy /etc/ssl/private; \
   chmod -R 0700 /etc/ssl/private; \
   chown -R postgres /etc/ssl/private
+
+RUN chmod +x /etc/ssl/private
 
 # Adjust PostgreSQL configuration so that remote connections to the
 # database are possible.
