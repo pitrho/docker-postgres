@@ -1,6 +1,7 @@
 #!/bin/bash
 
 BACKUP_LOG="/var/log/postgresql/backup.log"
+touch $BACKUP_LOG
 
 if [ -n "${CRON_TIME}" ]; then
     echo "=> Configuring cron schedule for database backups ..."
@@ -36,6 +37,8 @@ if [ -n "${CRON_TIME}" ]; then
 
     # start cron if it's not running
     if [ ! -f /var/run/crond.pid ]; then
-        exec /usr/sbin/cron -f
+        exec /usr/sbin/cron -f &
     fi
+
+    tail -f $BACKUP_LOG
 fi
