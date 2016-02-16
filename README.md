@@ -107,6 +107,10 @@ To run the backups on a cron schedule (e.g every day at 6 am), do:
 
     docker run -d -p 5432:5432 -e PG_DB=dname -e AWS_ACCESS_KEY_ID=keyid -e AWS_SECRET_ACCESS_KEY=secret -e AWS_DEFAULT_REGION=region -e S3_BUCKET=path/to/bucket -e CRON_TIME="0 6 * * * root"
 
+Note that the image only uploads backups to s3, but it does not remove any old
+backups. To do this, we suggest you use the s3 lifecycle policies to archive
+and remove old files.
+
 ## License
 
 MIT. See the LICENSE file.

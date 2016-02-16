@@ -31,8 +31,6 @@ if [ -n "${CRON_TIME}" ]; then
     echo "PG_PASS=${PG_PASS}" >> /etc/cron.d/postgres_backup
     echo "PG_DB=${PG_DB}" >> /etc/cron.d/postgres_backup
     echo "S3_BUCKET=${S3_BUCKET}" >> /etc/cron.d/postgres_backup
-    [ -n "${MAX_BACKUPS}" ] && { echo "MAX_BACKUPS=${MAX_BACKUPS}" >> /etc/cron.d/postgres_backup; }
-    [ -n "${EXTRA_OPTS}" ] && { echo "EXTRA_OPTS=${EXTRA_OPTS}" >> /etc/cron.d/postgres_backup; }
     echo "${CRON_TIME} /backup.sh >> ${BACKUP_LOG} 2>&1" >> /etc/cron.d/postgres_backup
 
     # start cron if it's not running
@@ -41,4 +39,6 @@ if [ -n "${CRON_TIME}" ]; then
     fi
 
     tail -f $BACKUP_LOG
+else
+    echo "=> Backups not scheduled. No CRON_TIME found."
 fi

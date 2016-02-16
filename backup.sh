@@ -19,9 +19,7 @@ PG_PASS=${PG_PASS:-${PG_ENV_PG_PASS}}
 [ -z "${AWS_DEFAULT_REGION}" ] && { echo "=> AWS_DEFAULT_REGION cannot be empty" && exit 1; }
 
 
-DEFAULT_MAX_BACKUPS=30
-MAX_BACKUPS=${MAX_BACKUPS:-${DEFAULT_MAX_BACKUPS}}
-BACKUP_NAME="${PG_DB}_`date +"%m%d%Y_%H%M%S"`.dump.gz"
+BACKUP_NAME="${PG_DB}_`date +"%Y%m%d_%H%M%S"`.dump.gz"
 BACKUP_PATH="/tmp/${BACKUP_NAME}"
 
 echo "=> Backup started ..."
@@ -50,18 +48,5 @@ S3_FILE_PATH="s3://$S3_BUCKET/$BACKUP_NAME"
 
 # Clean up
 rm -rf $BACKUP_PATH
-
-echo "Removing old databse backup files ..."
-files=($(aws s3 ls s3://$S3_BUCKET | awk '{print $4}'))
-count=${#files[@]}
-diff=`expr $count - $MAX_BACKUPS`
-if [[ $diff -gt 0 ]]; then
-  while [[ $diff -gt 0 ]]; do
-    i=`expr $diff - 1`
-    file=${files[$i]}
-    /usr/bin/aws s3 rm s3://$S3_BUCKET/$file
-    let diff=diff-1
-  done
-fi
 
 echo "=> Backup done"
