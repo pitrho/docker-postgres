@@ -38,6 +38,8 @@ if [ -n "${CRON_TIME}" ]; then
         exec /usr/sbin/cron -f &
     fi
 
+    echo "=> Cron schedule set to ${CRON_TIME}. Tailing logs ..."
+
     tail -f $BACKUP_LOG
 else
     echo "=> Backups not scheduled. No CRON_TIME found."
