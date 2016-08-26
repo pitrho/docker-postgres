@@ -10,7 +10,6 @@ CONFIG_FILE=${PG_CONFIG_FILE:=/etc/postgresql/%%PG_VERSION%%/main/postgresql.con
 HBA_FILE=${PG_HBA_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_hba.conf}
 IDENT_FILE=${PG_IDENT_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_ident.conf}
 OUT_LOG=/var/log/postgresql/out.log
-SLEEP_TIME=5
 
 # Custom die function.
 #
@@ -21,6 +20,23 @@ StartPGServer()
   echo "=> Starting Postgres Server ..."
   PGARGS="-c config_file=$CONFIG_FILE -c data_directory=$DATADIR -c hba_file=$HBA_FILE -c ident_file=$IDENT_FILE"
   su postgres sh -c "$BINDIR/postgres ${PGARGS} ${EXTRA_OPTS} > $OUT_LOG 2>&1 &"
+
+  # Time out in 1 minute
+  LOOP_LIMIT=60
+  for (( i=0 ; ; i++ )); do
+      if [ ${i} -eq ${LOOP_LIMIT} ]; then
+          echo "Time out. PostgreSQL still has not started ..."
+          exit 1
+      fi
+      echo "=> Waiting for confirmation of PostgreSQL service startup, trying ${i}/${LOOP_LIMIT} ..."
+      sleep 1
+
+      pg_isready >> /dev/null
+      if [ $? == 0 ]; then
+        break
+      fi
+
+  done
 }
 
 InitDB() {
@@ -51,8 +67,7 @@ CreatePGUser()
 
   PASS=${PG_PASS:-$(pwgen -s 12 1)}
   _word=$( [ ${PG_PASS} ] && echo "preset" || echo "random" )
-	echo "=> Creating PostgreSQL user ${PG_USER} in ${SLEEP_TIME} seconds ..."
-  sleep $SLEEP_TIME
+	echo "=> Creating PostgreSQL user ${PG_USER}  ..."
   psql -U postgres -c "CREATE USER ${PG_USER} WITH SUPERUSER ENCRYPTED PASSWORD '${PASS}';"
   echo "=> Done!"
   if [ "$SHOW_PWD" = true ]; then

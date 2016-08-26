@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PG_VERSION="9.4"
-IMAGE_TAG="pitrho/postgresql"
+IMAGE_TAG="pitrho/postgres"
 
 # Custom die function.
 #
