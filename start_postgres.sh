@@ -10,6 +10,7 @@ CONFIG_FILE=${PG_CONFIG_FILE:=/etc/postgresql/%%PG_VERSION%%/main/postgresql.con
 HBA_FILE=${PG_HBA_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_hba.conf}
 IDENT_FILE=${PG_IDENT_FILE:=/etc/postgresql/%%PG_VERSION%%/main/pg_ident.conf}
 OUT_LOG=/var/log/postgresql/out.log
+SLEEP_TIME=5
 
 # Custom die function.
 #
@@ -50,7 +51,8 @@ CreatePGUser()
 
   PASS=${PG_PASS:-$(pwgen -s 12 1)}
   _word=$( [ ${PG_PASS} ] && echo "preset" || echo "random" )
-	echo "=> Creating PostgreSQL user ${PG_USER}"
+	echo "=> Creating PostgreSQL user ${PG_USER} in ${SLEEP_TIME} seconds ..."
+  sleep $SLEEP_TIME
   psql -U postgres -c "CREATE USER ${PG_USER} WITH SUPERUSER ENCRYPTED PASSWORD '${PASS}';"
   echo "=> Done!"
   if [ "$SHOW_PWD" = true ]; then
