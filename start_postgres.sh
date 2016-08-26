@@ -31,7 +31,7 @@ StartPGServer()
       echo "=> Waiting for confirmation of PostgreSQL service startup, trying ${i}/${LOOP_LIMIT} ..."
       sleep 1
 
-      pg_isready >> /dev/null
+      pg_isready -q -U postgres
       if [ $? == 0 ]; then
         break
       fi
