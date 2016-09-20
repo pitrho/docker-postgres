@@ -44,7 +44,8 @@ You will see an output like the following:
 	========================================================================
 	You can now connect to this PostgreSQL Server using:
 
-	    psql -u admin -p CwSlBmL6gE3P -h <host> -p <port> -d <database>
+      psql -U admin -W -h <host> -p <port> -d <database>
+      Randomly assigned password: CwSlBmL6gE3P
 
 	Please remember to change the above password as soon as possible!
 	User 'postgres' has no password but only allows local connections
